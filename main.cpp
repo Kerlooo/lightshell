@@ -10,15 +10,15 @@
 #define endl  '\n'
 
 // Colors
-#define RESET   "\033[0m"
-#define BLACK   "\033[30m"      
-#define RED     "\033[31m"      
-#define GREEN   "\033[32m"      
-#define YELLOW  "\033[33m"      
-#define BLUE    "\033[34m"      
-#define MAGENTA "\033[35m"      
-#define CYAN    "\033[36m"      
-#define WHITE   "\033[37m"      
+#define RESET       "\033[0m"
+#define BLACK       "\033[30m"      
+#define RED         "\033[31m"      
+#define GREEN       "\033[32m"      
+#define YELLOW      "\033[33m"      
+#define BLUE        "\033[34m"      
+#define MAGENTA     "\033[35m"      
+#define CYAN        "\033[36m"      
+#define WHITE       "\033[37m"      
 #define BOLDBLACK   "\033[1m\033[30m"      
 #define BOLDRED     "\033[1m\033[31m"      
 #define BOLDGREEN   "\033[1m\033[32m"      
@@ -35,7 +35,7 @@ string get_home(){
     const char* home = getenv("HOME");
 
     if(home == nullptr){
-        cerr << RED << "Error while getting home path";
+        cerr << RED << "Error while getting home path" << RESET;
         return "";
     }
     return home;
@@ -90,6 +90,18 @@ void append_history(const string& path, const string& command){
     out << command << '\n';
 }
 
+void clear_history(const string& path, vector<string>& history){
+    if(path.empty())
+        return;
+
+    ofstream out(path, ios::trunc);
+    if(!out){
+        cerr << RED << "Error while clearing history: " << path << RESET << endl;
+        return;
+    }
+    history.clear();
+}
+
 vector<string> tokenize(string& command){
     vector<string> tokens;
     istringstream iss(command);
@@ -118,7 +130,7 @@ void execute(const vector<string>& args){
         execvp(argv[0], argv.data());
         
         // if execvp returns it means that failed.
-        cerr <<  "lsh> command not found: " RED << argv[0] << WHITE << endl;
+        cerr <<  "lsh> command not found: " RED << argv[0] << RESET << endl;
         _exit(127);
     }
 
@@ -136,7 +148,7 @@ int main(){
 
     while(true){
         string command{};
-        cout << WHITE << "lsh> ";
+        cout << RESET << "lsh> ";
 
         if (!getline(cin, command)) {
             break;
@@ -157,6 +169,11 @@ int main(){
         if(command == "history"){
             for(auto c : history)
                 cout << c << endl;
+            continue;
+        }
+
+        if(command == "clear-history" || command == "history -c"){
+            clear_history(history_path, history);
             continue;
         }
 
