@@ -17,17 +17,33 @@ memory management, the standard library, and lower-level system programming
 (syscalls, process handling, file descriptors) all in one place.
 
 ## Future TODO:
-- [x] Execute real programs 
+- [x] Execute real programs
 - [x] Use colors when there are problems
 - [x] Understand flags
+- [x] Persistent command history (saved to `~/.lsh/history.txt`)
 - [ ] Pipes
+- [ ] I/O redirection
+- [ ] Quoting/escaping support in the tokenizer (e.g. `"file with spaces"`)
+- [ ] Environment variable expansion (`$HOME`) and tilde expansion (`~`)
+- [ ] Command chaining (`&&`, `||`, `;`)
+- [ ] Background execution (`&`) and basic job control
+- [ ] Signal handling
+- [x] Create make file with optimizations
+
+## Requirements
+- A POSIX/Linux system (the shell relies on `fork`, `execvp`, `waitpid`)
+- A C++ compiler with C++17 support or later (needed for `<filesystem>`)
+- `make`
 
 ## Building
 ```bash
 git clone https://github.com/Kerlooo/lightshell.git
 cd lightshell
-gcc main.cpp -o lighshell
+make
 ```
+
+This builds an optimized release binary (`-O2 -s`). For a debug build with
+sanitizers enabled, run `make debug` instead — it produces `lightshell-debug`.
 
 ## Usage
 ```bash
