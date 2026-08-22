@@ -17,9 +17,10 @@ memory management, the standard library, and lower-level system programming
 (syscalls, process handling, file descriptors) all in one place.
 
 ## Future TODO:
-- [ ] Execute real programs 
-- [ ] Use colors when there are problems
-- [ ] Understand flags
+- [x] Execute real programs 
+- [x] Use colors when there are problems
+- [x] Understand flags
+- [ ] Pipes
 
 ## Building
 ```bash
@@ -56,4 +57,4 @@ Adapt — remix, transform, and build upon the material for any purpose, even co
 Under the following terms:
 
 Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
-For more details, see the [LICENSE](LICENSE) file or visit creativecommons.org.
+For more details, see the [LICENSE](LICENSE) file or visit [creativecommons.org](creativecommons.org).
