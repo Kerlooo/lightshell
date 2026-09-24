@@ -53,6 +53,18 @@ vector<string> tokenize(string& command){
     return tokens;
 }
 
+void print_help(){
+    cout << BOLDCYAN << "lightshell (lsh)" << RESET << " - a minimal shell written in C++\n"
+         << "Made by " << BOLDGREEN << "Kerlo" << RESET << "\n"
+         << "GitHub: " << BOLDGREEN << "https://github.com/Kerlooo/lightshell" << RESET << "\n\n"
+         << BOLDYELLOW << "Builtin commands:" << RESET << "\n"
+         << "  " << GREEN << "help" << RESET << "                          show this message\n"
+         << "  " << GREEN << "history" << RESET << "                       show command history\n"
+         << "  " << GREEN << "clear-history" << RESET << ", " << GREEN << "history -c" << RESET << "     clear command history\n"
+         << "  " << GREEN << "exit" << RESET << "                          exit the shell\n\n"
+         << "Any other input is executed as an external command." << endl;
+}
+
 void execute(const vector<string>& args){
     vector<char*> argv;
     for (const auto& s : args) {
@@ -107,7 +119,7 @@ int main(){
         }
 
         if(command == "help"){
-            
+            print_help();
             continue;
         }
 
