@@ -2,10 +2,13 @@ CXX = g++
 CXXFLAGS_RELEASE = -std=c++17 -O2 -s
 CXXFLAGS_DEBUG = -std=c++17 -O0 -g -fsanitize=address,undefined
 
-lightshell: main.cpp
-	$(CXX) $(CXXFLAGS_RELEASE) main.cpp -o lightshell
+SRCS = main.cpp history.cpp
+HDRS = colors.hpp history.hpp
 
-debug: main.cpp
-	$(CXX) $(CXXFLAGS_DEBUG) main.cpp -o lightshell-debug
+lightshell: $(SRCS) $(HDRS)
+	$(CXX) $(CXXFLAGS_RELEASE) $(SRCS) -o lightshell
+
+debug: $(SRCS) $(HDRS)
+	$(CXX) $(CXXFLAGS_DEBUG) $(SRCS) -o lightshell-debug
 
 .PHONY: debug

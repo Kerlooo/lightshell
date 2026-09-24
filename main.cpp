@@ -4,31 +4,13 @@
 #include <vector>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <fstream> // For files
 #include <filesystem>
 
-#define endl  '\n'
-
-// Colors
-#define RESET       "\033[0m"
-#define BLACK       "\033[30m"      
-#define RED         "\033[31m"      
-#define GREEN       "\033[32m"      
-#define YELLOW      "\033[33m"      
-#define BLUE        "\033[34m"      
-#define MAGENTA     "\033[35m"      
-#define CYAN        "\033[36m"      
-#define WHITE       "\033[37m"      
-#define BOLDBLACK   "\033[1m\033[30m"      
-#define BOLDRED     "\033[1m\033[31m"      
-#define BOLDGREEN   "\033[1m\033[32m"      
-#define BOLDYELLOW  "\033[1m\033[33m"      
-#define BOLDBLUE    "\033[1m\033[34m"      
-#define BOLDMAGENTA "\033[1m\033[35m"      
-#define BOLDCYAN    "\033[1m\033[36m"      
-#define BOLDWHITE   "\033[1m\033[37m"      
+#include "colors.hpp"
+#include "history.hpp"
 
 using namespace std;
+using namespace color;
 
 constexpr size_t MAX_INPUT_LEN = 4096;
 string get_home(){
@@ -60,48 +42,6 @@ string get_lsh_dir(){
     return dir.string();
 }
 
-vector<string> load_history(const string& path){
-    vector<string> history;
-    if(path.empty())
-        return history;
-
-    ifstream in(path);
-    if(!in)
-        return history;
-
-    string line;
-
-    while(getline(in, line)){
-        if(!line.empty())
-            history.push_back(line);
-    }
-    return history;
-}
-
-void append_history(const string& path, const string& command){
-    if(path.empty())
-        return;
-    
-    ofstream out(path, ios::app);
-    if(!out){
-        cerr << RED << "Error while writing to history: " << path << endl;
-        return;
-    }
-    out << command << '\n';
-}
-
-void clear_history(const string& path, vector<string>& history){
-    if(path.empty())
-        return;
-
-    ofstream out(path, ios::trunc);
-    if(!out){
-        cerr << RED << "Error while clearing history: " << path << RESET << endl;
-        return;
-    }
-    history.clear();
-}
-
 vector<string> tokenize(string& command){
     vector<string> tokens;
     istringstream iss(command);
@@ -130,7 +70,7 @@ void execute(const vector<string>& args){
         execvp(argv[0], argv.data());
         
         // if execvp returns it means that failed.
-        cerr <<  "lsh> command not found: " RED << argv[0] << RESET << endl;
+        cerr <<  "lsh> command not found: " << RED << argv[0] << RESET << endl;
         _exit(127);
     }
 
@@ -164,6 +104,11 @@ int main(){
 
         if (command == "exit") {
             break;
+        }
+
+        if(command == "help"){
+            
+            continue;
         }
 
         if(command == "history"){
