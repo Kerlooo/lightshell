@@ -5,6 +5,9 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <filesystem>
+#include <csignal>
+#include <cerrno>
+#include <cstring>
 
 #include "colors.hpp"
 #include "history.hpp"
@@ -35,7 +38,7 @@ string get_lsh_dir(){
 
     fs::create_directories(dir, ec);
     if(ec){
-        cerr << RED << "Error while creating " << dir << ": " << ec.message() << endl;
+        cerr << RED << "Error while creating " << dir << ": " << ec.message() << RESET << endl;
         return "";
     }
 
@@ -58,6 +61,7 @@ void print_help(){
          << "Made by " << BOLDGREEN << "Kerlo" << RESET << "\n"
          << "GitHub: " << BOLDGREEN << "https://github.com/Kerlooo/lightshell" << RESET << "\n\n"
          << BOLDYELLOW << "Builtin commands:" << RESET << "\n"
+         << "  " << GREEN << "cd" << RESET << " [dir]                      change directory (default: $HOME)\n"
          << "  " << GREEN << "help" << RESET << "                          show this message\n"
          << "  " << GREEN << "history" << RESET << "                       show command history\n"
          << "  " << GREEN << "clear-history" << RESET << ", " << GREEN << "history -c" << RESET << "     clear command history\n"
@@ -65,7 +69,26 @@ void print_help(){
          << "Any other input is executed as an external command." << endl;
 }
 
-void execute(const vector<string>& args){
+volatile sig_atomic_t child_running = 0;
+
+// Ctrl+C must kill the running command, not the shell.
+void sigint_handler(int){
+    if(child_running)
+        write(STDOUT_FILENO, "\n", 1);
+    else
+        write(STDOUT_FILENO, "\nlsh> ", 6);
+}
+
+void change_dir(const vector<string>& args){
+    string target = args.size() > 1 ? args[1] : get_home();
+    if(target.empty())
+        return;
+
+    if(chdir(target.c_str()) != 0)
+        cerr << RED << "cd: " << target << ": " << strerror(errno) << RESET << endl;
+}
+
+int execute(const vector<string>& args){
     vector<char*> argv;
     for (const auto& s : args) {
         argv.push_back(const_cast<char*>(s.c_str()));
@@ -74,22 +97,33 @@ void execute(const vector<string>& args){
 
     pid_t pid = fork();
     if(pid < 0){
-        cerr << RED << "Error while creating the fork" << endl;
-        return;
+        cerr << RED << "Error while creating the fork" << RESET << endl;
+        return 1;
     }
 
     if(pid == 0){
+        signal(SIGINT, SIG_DFL);
         execvp(argv[0], argv.data());
-        
+
         // if execvp returns it means that failed.
-        cerr <<  "lsh> command not found: " << RED << argv[0] << RESET << endl;
-        _exit(127);
+        if(errno == ENOENT){
+            cerr <<  "lsh> command not found: " << RED << argv[0] << RESET << endl;
+            _exit(127);
+        }
+        cerr << "lsh> " << RED << argv[0] << ": " << strerror(errno) << RESET << endl;
+        _exit(126);
     }
 
-    else{
-        int stat{};
-        waitpid(pid, &stat, 0);
-    }
+    child_running = 1;
+    int stat{};
+    while(waitpid(pid, &stat, 0) < 0 && errno == EINTR);
+    child_running = 0;
+
+    if(WIFEXITED(stat))
+        return WEXITSTATUS(stat);
+    if(WIFSIGNALED(stat))
+        return 128 + WTERMSIG(stat);
+    return 1;
 }
 
 int main(){
@@ -97,6 +131,13 @@ int main(){
     string history_path = history_dir.empty() ? "" : history_dir + "/history.txt";
 
     vector<string> history = load_history(history_path);
+    int last_status = 0;
+
+    struct sigaction sa{};
+    sa.sa_handler = sigint_handler;
+    sa.sa_flags = SA_RESTART;
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGINT, &sa, nullptr);
 
     while(true){
         string command{};
@@ -107,29 +148,30 @@ int main(){
         }
 
         if(command.size() > MAX_INPUT_LEN){
-            cerr << RED << "The input is too big!" << endl;
+            cerr << RED << "The input is too big!" << RESET << endl;
             continue;
         }
 
-        if(command.empty())
+        auto args = tokenize(command);
+        if (args.empty())
             continue;
 
-        if (command == "exit") {
+        if (args[0] == "exit") {
             break;
         }
 
-        if(command == "help"){
+        if(args[0] == "help"){
             print_help();
             continue;
         }
 
-        if(command == "history"){
+        if(args[0] == "history" && args.size() == 1){
             for(auto c : history)
                 cout << c << endl;
             continue;
         }
 
-        if(command == "clear-history" || command == "history -c"){
+        if(args[0] == "clear-history" || (args[0] == "history" && args.size() > 1 && args[1] == "-c")){
             clear_history(history_path, history);
             continue;
         }
@@ -137,12 +179,13 @@ int main(){
         history.push_back(command);
         append_history(history_path, command);
 
-        auto args = tokenize(command);
-        if (args.empty())
+        if(args[0] == "cd"){
+            change_dir(args);
             continue;
+        }
 
-        execute(args);
+        last_status = execute(args);
     }
 
-    return 0;
+    return last_status;
 }

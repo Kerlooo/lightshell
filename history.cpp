@@ -32,7 +32,7 @@ void append_history(const string& path, const string& command){
     
     ofstream out(path, ios::app);
     if(!out){
-        cerr << RED << "Error while writing to history: " << path << endl;
+        cerr << RED << "Error while writing to history: " << path << RESET << endl;
         return;
     }
     out << command << '\n';
